@@ -9,25 +9,29 @@ const getParam = (req, param) => {
   return req.param(param) || (typeof req.options[param] !== 'undefined' ? req.options[param] : null);
 };
 
+const getFilterCalendar = (req) => {
+  const from = getParam(req, 'from');
+  const to = getParam(req, 'to');
+
+  const filterCalendar = {};
+  if(from || to) {
+    filterCalendar.date = {};
+  }
+  if(from) {
+    filterCalendar.date['>='] = from;
+  }
+  if(to) {
+    filterCalendar.date['<'] = to;
+  }
+  return filterCalendar;
+};
+
 
 module.exports = {
 
   find: async function (req, res) {
-    const from = getParam(req, 'from');
-    const to = getParam(req, 'to');
     const service = getParam(req, 'service');
-
-    const filterCalendar = {};
-    if(from || to) {
-      filterCalendar.date = {};
-    }
-    if(from) {
-      filterCalendar.date['>='] = from;
-    }
-    if(to) {
-      filterCalendar.date['<'] = to;
-    }
-
+    const filterCalendar = getFilterCalendar(req);
     let masters;
 
     try {
@@ -57,6 +61,32 @@ module.exports = {
     }
 
     return res.ok(masters);
+
+  },
+  findOne: async function (req, res) {
+    const id = req.param('id');
+    const filterCalendar = getFilterCalendar(req);
+
+    let master;
+    try {
+
+      master = await Master.findOne({
+        id
+      })
+        .populate('calendar', filterCalendar).populate('services');
+
+    } catch (err) {
+      if (err.name === 'UsageError') {
+        return res.badRequest(err);
+      } else {
+        throw err;
+      }
+    }
+    if (!master) {
+      return res.notFound();
+    }
+
+    return res.ok(master);
 
   },
 };

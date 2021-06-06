@@ -25,6 +25,7 @@ module.exports.routes = {
   'get /api/v1/migration/size': 'MigrationController.size',
   'get /api/v1/services': 'ServicesController.find',
   'get /api/v1/masters': 'MastersController.find',
+  'get /api/v1/masters/:id': 'MastersController.findOne',
   'get /api/v1/users/:id': 'UsersController.findOne',
   'post /api/v1/users/register': {controller: 'UsersController', action: 'register'},
   'post /api/v1/users/login': {controller: 'UsersController', action: 'login'},
