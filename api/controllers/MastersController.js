@@ -5,20 +5,43 @@
  * @help        :: See https://sailsjs.com/docs/concepts/actions
  */
 
+const getParam = (req, param) => {
+  return req.param(param) || (typeof req.options[param] !== 'undefined' ? req.options[param] : null);
+};
+
+
 module.exports = {
 
   find: async function (req, res) {
-    const from = req.param('from') || (typeof req.options.from !== 'undefined' ? req.options.from : null);
-    const to = req.param('to') || (typeof req.options.to !== 'undefined' ? req.options.to : null);
+    const from = getParam(req, 'from');
+    const to = getParam(req, 'to');
+    const service = getParam(req, 'service');
 
-    const filterCalendar = {date: {'>=': from, '<': to}};
+    const filterCalendar = {};
+    if(from || to) {
+      filterCalendar.date = {};
+    }
+    if(from) {
+      filterCalendar.date['>='] = from;
+    }
+    if(to) {
+      filterCalendar.date['<'] = to;
+    }
+
     let masters;
 
     try {
 
+      const services = await MasterService.find(service ? {service} : {});
+      const masterIdByServices = services.map(item => item.master);
+
       const calendar = await MasterCalendar.find(filterCalendar);
+      const masterIdByCalendar = calendar.map(item => item.master);
+
+      const masterIdByServicesAndCalendar = masterIdByServices.filter(item => masterIdByCalendar.includes(item));
+
       masters = await Master.find({
-        id: {in: calendar.map(item => item.master)}
+        id: masterIdByServicesAndCalendar
       })
         .populate('calendar', filterCalendar).populate('services');
 
